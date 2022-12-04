@@ -39,3 +39,15 @@ Se realizó un programa en Vitis para verificar el funcionamiento del ipcore y s
 ![vitis](img/vitis.png)
 
 ![cutecom](img/cutecom.png)
+
+### Prueba en Petalinux
+
+Se realizó una prueba simple con `devmem` y se verificó que **5+5=10**.
+
+![devmem](img/devmem.png)
+
+## Petalinux
+
+### Empaquetar imagen
+
+`petalinux-package --boot --force --fsbl ./images/linux/zynq_fsbl.elf --fpga ./images/linux/system.bit --u-boot`
