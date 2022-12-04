@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="ASCII"?>
+<sdkproject:SdkProject xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:sdkproject="http://www.xilinx.com/sdkproject" name="myalu_test" location="/home/gonzalo/workspace/MSE-IMD/ipcore/vitis/myalu_test" platform="/home/gonzalo/workspace/MSE-IMD/ipcore/vitis/myalu_artyz7_20/export/myalu_artyz7_20/myalu_artyz7_20.xpfm" platformUID="xilinx:arty-z7-20::0.0(custom)" systemProject="myalu_test_system" sysConfig="myalu_artyz7_20" runtime="C/C++" cpu="freertos10_xilinx_domain" cpuInstance="ps7_cortexa9_0" os="freertos10_xilinx" mssSignature="daa8122b9a160ba05f2c25b243d7b33a">
+  <configuration name="Debug" id="xilinx.gnu.armv7.exe.debug.1595785005">
+    <configBuildOptions xsi:type="sdkproject:SdkOptions"/>
+    <lastBuildOptions xsi:type="sdkproject:SdkOptions"/>
+  </configuration>
+  <configuration name="Release" id="xilinx.gnu.armv7.exe.release.276115928" dirty="true">
+    <configBuildOptions xsi:type="sdkproject:SdkOptions"/>
+  </configuration>
+  <template appTemplateName="freertos_hello_world" hasBspSettings="true"/>
+</sdkproject:SdkProject>
