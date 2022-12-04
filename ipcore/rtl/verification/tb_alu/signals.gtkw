@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
-[*] Sun Dec  4 02:53:34 2022
+[*] Sun Dec  4 04:11:47 2022
 [*]
 [dumpfile] "/home/gonzalo/workspace/MSE-IMD/ipcore/rtl/verification/tb_alu/waves.fst"
-[dumpfile_mtime] "Sun Dec  4 02:45:12 2022"
-[dumpfile_size] 725
+[dumpfile_mtime] "Sun Dec  4 04:08:33 2022"
+[dumpfile_size] 741
 [savefile] "/home/gonzalo/workspace/MSE-IMD/ipcore/rtl/verification/tb_alu/signals.gtkw"
 [timestart] 0
 [size] 1546 836
-[pos] -500 -172
-*-27.157616 500000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -1
+*-28.157616 80000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 336
 [signals_width] 262
 [sst_expanded] 1
@@ -20,6 +20,7 @@
 dut.clock_i
 dut.reset_n_i
 dut.enable_i
+[color] 2
 dut.ready_for_data_o
 @200
 -
@@ -27,7 +28,11 @@ dut.ready_for_data_o
 @22
 dut.operand1_i[31:0]
 dut.operand2_i[31:0]
+[color] 2
 dut.operation_i[31:0]
+@28
+[color] 2
+dut.operation_s
 @200
 -
 -SALIDAS

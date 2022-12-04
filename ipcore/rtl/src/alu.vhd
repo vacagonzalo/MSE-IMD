@@ -29,7 +29,14 @@ END ENTITY alu;
 
 ARCHITECTURE rtl OF alu IS
 
-    TYPE operation_t IS (operation_invalid, operation_or, operation_and, operation_add, operation_sub);
+    TYPE operation_t IS (
+        operation_invalid,
+        operation_not,
+        operation_or,
+        operation_xor,
+        operation_and,
+        operation_add,
+        operation_sub);
 
     FUNCTION get_operation(a : STD_LOGIC_VECTOR(31 DOWNTO 0))
         RETURN operation_t IS
@@ -37,10 +44,12 @@ ARCHITECTURE rtl OF alu IS
     BEGIN
         CASE a IS
             WHEN x"00000000" => result := operation_invalid;
-            WHEN x"00000001" => result := operation_or;
-            WHEN x"00000002" => result := operation_and;
-            WHEN x"00000003" => result := operation_add;
-            WHEN x"00000004" => result := operation_sub;
+            WHEN x"00000001" => result := operation_not;
+            WHEN x"00000002" => result := operation_or;
+            WHEN x"00000003" => result := operation_xor;
+            WHEN x"00000004" => result := operation_and;
+            WHEN x"00000005" => result := operation_add;
+            WHEN x"00000006" => result := operation_sub;
             WHEN OTHERS => result := operation_invalid;
         END CASE;
         RETURN result;
@@ -86,8 +95,12 @@ BEGIN
                 IF (enable_i = '1') THEN
                     operation_s <= get_operation(operation_i);
                     CASE operation_s IS
+                        WHEN operation_not =>
+                            result_s <= '0' & (NOT operand1_i);
                         WHEN operation_or =>
                             result_s <= '0' & (operand1_i OR operand2_i);
+                        WHEN operation_xor =>
+                            result_s <= '0' & (operand1_i XOR operand2_i);
                         WHEN operation_and =>
                             result_s <= '0' & (operand1_i AND operand2_i);
                         WHEN operation_add =>

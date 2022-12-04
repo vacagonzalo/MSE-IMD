@@ -43,7 +43,7 @@ ARCHITECTURE testbench OF tb_alu IS
     SIGNAL tb_operand1_is : STD_LOGIC_VECTOR(data_width - 1 DOWNTO 0) := "11010101010101010101010101010101";
     SIGNAL tb_operand2_is : STD_LOGIC_VECTOR(data_width - 1 DOWNTO 0) := "10001111000011110000111100001111";
 
-    CONSTANT simulation_clocks : INTEGER := 50;
+    CONSTANT simulation_clocks : INTEGER := 100;
     SIGNAL tb_clock_counter_s : INTEGER := 0;
 BEGIN
 
@@ -81,7 +81,8 @@ BEGIN
         x"00000002" AFTER 300 ns,
         x"00000003" AFTER 450 ns,
         x"00000004" AFTER 600 ns,
-        x"00000005" AFTER 750 ns;
+        x"00000005" AFTER 750 ns,
+        x"00000006" AFTER 900 ns;
 
     u_clk_counter : PROCESS (tb_clock_is)
     BEGIN
