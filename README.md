@@ -5,6 +5,7 @@ Trabajo final de la asignatura "Implementación de manejadores de dispositivos" 
 
 ### Lista de puertos
 
+* clock_i: reloj del core.
 * enable_i: habilita el funcionamiento del core.
 * reset_n_i: reinicia el core cuando se aplica un nivel alto.
 * carry_o: indica que la operación tuvo carry.
@@ -13,6 +14,8 @@ Trabajo final de la asignatura "Implementación de manejadores de dispositivos" 
 * operand1_i: primer operador.
 * operand2_i: segundo operador.
 * result_o: resultado de la operación.
+
+![señales](img/signals.png)
 
 ### Datos del esclavo AXI
 
@@ -28,3 +31,11 @@ Dirección base: 0x43C00000
 |operand1_i       |in  |R3      |31:0|12    |
 |operand2_i       |in  |R4      |31:0|16    |
 |result_o         |out |R5      |31:0|20    |
+
+### Prueba del diseño de placa
+
+Se realizó un programa en Vitis para verificar el funcionamiento del ipcore y su conexión con la unidad de procesamiento de aplicaciones.
+
+![vitis](img/vitis.png)
+
+![cutecom](img/cutecom.png)
