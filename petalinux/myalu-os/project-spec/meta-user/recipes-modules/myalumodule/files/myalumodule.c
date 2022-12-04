@@ -1,182 +1,142 @@
-/*  myalumodule.c - The simplest kernel module.
-
-* Copyright (C) 2013 - 2016 Xilinx, Inc
-*
-*   This program is free software; you can redistribute it and/or modify
-*   it under the terms of the GNU General Public License as published by
-*   the Free Software Foundation; either version 2 of the License, or
-*   (at your option) any later version.
-
-*   This program is distributed in the hope that it will be useful,
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*   GNU General Public License for more details.
-*
-*   You should have received a copy of the GNU General Public License along
-*   with this program. If not, see <http://www.gnu.org/licenses/>.
-
-*/
-#include <linux/kernel.h>
+#include <linux/cdev.h>
+#include <linux/device.h>
+#include <linux/err.h>
+#include <linux/fs.h>
 #include <linux/init.h>
-#include <linux/module.h>
-#include <linux/slab.h>
 #include <linux/io.h>
-#include <linux/interrupt.h>
+#include <linux/kdev_t.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/moduleparam.h>
 
-#include <linux/of_address.h>
-#include <linux/of_device.h>
-#include <linux/of_platform.h>
+dev_t dev = 0;
+static struct class *dev_class;
+static struct cdev myalu_cdev;
 
-/* Standard module information, edit as appropriate */
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR
-    ("Gonzalo Nahuel Vaca");
-MODULE_DESCRIPTION
-    ("myalumodule - module to communicate with myalu ipcore.");
+/*
+** Function Prototypes
+*/
+static int __init myalu_driver_init(void);
+static void __exit myalu_driver_exit(void);
+static int myalu_open(struct inode *inode, struct file *file);
+static int myalu_release(struct inode *inode, struct file *file);
+static ssize_t myalu_read(struct file *filp, char __user *buf, size_t len, loff_t *off);
+static ssize_t myalu_write(struct file *filp, const char *buf, size_t len, loff_t *off);
 
-#define DRIVER_NAME "myalumodule"
-
-/* Simple example of how to receive command line parameters to your module.
-   Delete if you don't need them */
-unsigned myint = 0xdeadbeef;
-char *mystr = "default";
-
-module_param(myint, int, S_IRUGO);
-module_param(mystr, charp, S_IRUGO);
-
-struct myalumodule_local {
-	int irq;
-	unsigned long mem_start;
-	unsigned long mem_end;
-	void __iomem *base_addr;
-};
-
-static irqreturn_t myalumodule_irq(int irq, void *lp)
-{
-	printk("myalumodule interrupt\n");
-	return IRQ_HANDLED;
-}
-
-static int myalumodule_probe(struct platform_device *pdev)
-{
-	struct resource *r_irq; /* Interrupt resources */
-	struct resource *r_mem; /* IO mem resources */
-	struct device *dev = &pdev->dev;
-	struct myalumodule_local *lp = NULL;
-
-	int rc = 0;
-	dev_info(dev, "Device Tree Probing\n");
-	/* Get iospace for the device */
-	r_mem = platform_get_resource(pdev, IORESOURCE_MEM, 0);
-	if (!r_mem) {
-		dev_err(dev, "invalid address\n");
-		return -ENODEV;
-	}
-	lp = (struct myalumodule_local *) kmalloc(sizeof(struct myalumodule_local), GFP_KERNEL);
-	if (!lp) {
-		dev_err(dev, "Cound not allocate myalumodule device\n");
-		return -ENOMEM;
-	}
-	dev_set_drvdata(dev, lp);
-	lp->mem_start = r_mem->start;
-	lp->mem_end = r_mem->end;
-
-	if (!request_mem_region(lp->mem_start,
-				lp->mem_end - lp->mem_start + 1,
-				DRIVER_NAME)) {
-		dev_err(dev, "Couldn't lock memory region at %p\n",
-			(void *)lp->mem_start);
-		rc = -EBUSY;
-		goto error1;
-	}
-
-	lp->base_addr = ioremap(lp->mem_start, lp->mem_end - lp->mem_start + 1);
-	if (!lp->base_addr) {
-		dev_err(dev, "myalumodule: Could not allocate iomem\n");
-		rc = -EIO;
-		goto error2;
-	}
-
-	/* Get IRQ for the device */
-	r_irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
-	if (!r_irq) {
-		dev_info(dev, "no IRQ found\n");
-		dev_info(dev, "myalumodule at 0x%08x mapped to 0x%08x\n",
-			(unsigned int __force)lp->mem_start,
-			(unsigned int __force)lp->base_addr);
-		return 0;
-	}
-	lp->irq = r_irq->start;
-	rc = request_irq(lp->irq, &myalumodule_irq, 0, DRIVER_NAME, lp);
-	if (rc) {
-		dev_err(dev, "testmodule: Could not allocate interrupt %d.\n",
-			lp->irq);
-		goto error3;
-	}
-
-	dev_info(dev,"myalumodule at 0x%08x mapped to 0x%08x, irq=%d\n",
-		(unsigned int __force)lp->mem_start,
-		(unsigned int __force)lp->base_addr,
-		lp->irq);
-	return 0;
-error3:
-	free_irq(lp->irq, lp);
-error2:
-	release_mem_region(lp->mem_start, lp->mem_end - lp->mem_start + 1);
-error1:
-	kfree(lp);
-	dev_set_drvdata(dev, NULL);
-	return rc;
-}
-
-static int myalumodule_remove(struct platform_device *pdev)
-{
-	struct device *dev = &pdev->dev;
-	struct myalumodule_local *lp = dev_get_drvdata(dev);
-	free_irq(lp->irq, lp);
-	iounmap(lp->base_addr);
-	release_mem_region(lp->mem_start, lp->mem_end - lp->mem_start + 1);
-	kfree(lp);
-	dev_set_drvdata(dev, NULL);
-	return 0;
-}
-
-#ifdef CONFIG_OF
-static struct of_device_id myalumodule_of_match[] = {
-	{ .compatible = "vendor,myalumodule", },
-	{ /* end of list */ },
-};
-MODULE_DEVICE_TABLE(of, myalumodule_of_match);
-#else
-# define myalumodule_of_match
-#endif
-
-
-static struct platform_driver myalumodule_driver = {
-	.driver = {
-		.name = DRIVER_NAME,
+static struct file_operations fops =
+	{
 		.owner = THIS_MODULE,
-		.of_match_table	= myalumodule_of_match,
-	},
-	.probe		= myalumodule_probe,
-	.remove		= myalumodule_remove,
+		.read = myalu_read,
+		.write = myalu_write,
+		.open = myalu_open,
+		.release = myalu_release,
 };
 
-static int __init myalumodule_init(void)
+/*
+** This function will be called when we open the Device file
+*/
+static int myalu_open(struct inode *inode, struct file *file)
 {
-	printk("<1>Hello module world.\n");
-	printk("<1>Module parameters were (0x%08x) and \"%s\"\n", myint,
-	       mystr);
-
-	return platform_driver_register(&myalumodule_driver);
+	pr_info("Driver Open Function Called...!!!\n");
+	// TODO: informar si el dispositivo está ready for data
+	return 0;
 }
 
-
-static void __exit myalumodule_exit(void)
+/*
+** This function will be called when we close the Device file
+*/
+static int myalu_release(struct inode *inode, struct file *file)
 {
-	platform_driver_unregister(&myalumodule_driver);
-	printk(KERN_ALERT "Goodbye module world.\n");
+	pr_info("Driver Release Function Called...!!!\n");
+	// TODO: informar si el dispositivo está ready for data
+	return 0;
 }
 
-module_init(myalumodule_init);
-module_exit(myalumodule_exit);
+/*
+** This function will be called when we read the Device file
+*/
+static ssize_t myalu_read(struct file *filp, char __user *buf, size_t len, loff_t *off)
+{
+	pr_info("Driver Read Function Called...!!!\n");
+	// TODO: leer resultado y carry
+	return 0;
+}
+
+/*
+** This function will be called when we write the Device file
+*/
+static ssize_t myalu_write(struct file *filp, const char __user *buf, size_t len, loff_t *off)
+{
+	pr_info("Driver Write Function Called...!!!\n");
+	// TODO: parcear para enviar operación, operando1 y operando2
+	return len;
+}
+
+/*
+** Module Init function
+*/
+static int __init myalu_driver_init(void)
+{
+	/*Allocating Major number*/
+	if ((alloc_chrdev_region(&dev, 0, 1, "myalu")) < 0)
+	{
+		pr_err("Cannot allocate major number\n");
+		return -1;
+	}
+	pr_info("Major = %d Minor = %d \n", MAJOR(dev), MINOR(dev));
+
+	/*Creating cdev structure*/
+	cdev_init(&myalu_cdev, &fops);
+
+	/*Adding character device to the system*/
+	if ((cdev_add(&myalu_cdev, dev, 1)) < 0)
+	{
+		pr_err("Cannot add the device to the system\n");
+		goto r_class;
+	}
+
+	/*Creating struct class*/
+	if (IS_ERR(dev_class = class_create(THIS_MODULE, "myalu_class")))
+	{
+		pr_err("Cannot create the struct class\n");
+		goto r_class;
+	}
+
+	/*Creating device*/
+	if (IS_ERR(device_create(dev_class, NULL, dev, NULL, "myalu_device")))
+	{
+		pr_err("Cannot create the Device 1\n");
+		goto r_device;
+	}
+	pr_info("Device Driver Insert...Done!!!\n");
+
+	// TODO: habilitar el ipcore
+	return 0;
+
+r_device:
+	class_destroy(dev_class);
+r_class:
+	unregister_chrdev_region(dev, 1);
+	return -1;
+}
+
+/*
+** Module exit function
+*/
+static void __exit myalu_driver_exit(void)
+{
+	device_destroy(dev_class, dev);
+	class_destroy(dev_class);
+	cdev_del(&myalu_cdev);
+	unregister_chrdev_region(dev, 1);
+	pr_info("Device Driver Remove...Done!!!\n");
+	// TODO: deshabilitar el ipcore
+}
+
+module_init(myalu_driver_init);
+module_exit(myalu_driver_exit);
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Gonzalo Nahuel Vaca <vacagonzalo@gmail.com>");
+MODULE_DESCRIPTION("myalumodule - module to communicate with myalu ipcore.");
+MODULE_VERSION("1:0.0");
