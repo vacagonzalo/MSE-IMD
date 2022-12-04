@@ -51,3 +51,7 @@ Se realizó una prueba simple con `devmem` y se verificó que **5+5=10**.
 ### Empaquetar imagen
 
 `petalinux-package --boot --force --fsbl ./images/linux/zynq_fsbl.elf --fpga ./images/linux/system.bit --u-boot`
+
+### Creación de loadable kernel module (LKM)
+
+`petalinux-create -t modules --name mymodule --enable`

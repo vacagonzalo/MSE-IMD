@@ -3890,6 +3890,11 @@ CONFIG_auto-login=y
 CONFIG_Init-manager-sysvinit=y
 
 #
+# modules 
+#
+CONFIG_myalumodule=y
+
+#
 # user packages 
 #
 # CONFIG_gpio-demo is not set
