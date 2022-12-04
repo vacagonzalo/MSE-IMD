@@ -1,0 +1,39 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Sun Dec  4 02:53:34 2022
+[*]
+[dumpfile] "/home/gonzalo/workspace/MSE-IMD/ipcore/rtl/verification/tb_alu/waves.fst"
+[dumpfile_mtime] "Sun Dec  4 02:45:12 2022"
+[dumpfile_size] 725
+[savefile] "/home/gonzalo/workspace/MSE-IMD/ipcore/rtl/verification/tb_alu/signals.gtkw"
+[timestart] 0
+[size] 1546 836
+[pos] -500 -172
+*-27.157616 500000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 336
+[signals_width] 262
+[sst_expanded] 1
+[sst_vpaned_height] 226
+@200
+-CONTROL
+@28
+dut.clock_i
+dut.reset_n_i
+dut.enable_i
+dut.ready_for_data_o
+@200
+-
+-ENTRADAS
+@22
+dut.operand1_i[31:0]
+dut.operand2_i[31:0]
+dut.operation_i[31:0]
+@200
+-
+-SALIDAS
+@22
+dut.result_o[31:0]
+@28
+dut.carry_o
+[pattern_trace] 1
+[pattern_trace] 0
