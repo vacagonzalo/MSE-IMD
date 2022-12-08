@@ -48,6 +48,14 @@ Se realizó una prueba simple con `devmem` y se verificó que **5+5=10**.
 
 ## Petalinux
 
+Se realizó un módulo llamado `myalumodule` que crea un *char device*.
+
+Se puede escribir al dispositivo `operacion,operando1,operando2`.
+
+Se puede leer el dispositivo `carry,resultado`.
+
+![driver](img/esta_vivo.png)
+
 ### Empaquetar imagen
 
 `petalinux-package --boot --force --fsbl ./images/linux/zynq_fsbl.elf --fpga ./images/linux/system.bit --u-boot`
