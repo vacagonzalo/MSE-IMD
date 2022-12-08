@@ -80,20 +80,33 @@ static int myalu_release(struct inode *inode, struct file *file)
 
 static ssize_t myalu_read(struct file *filp, char __user *buf, size_t len, loff_t *off)
 {
-	u32 result = ioread32(r5);
-	u32 carry = ioread32(r1);
-	carry = carry & (0x00000001);
-	pr_info("%d,%d\n", carry, result);
+	char str[16];
+	size_t str_len = 0;
+	if (0 == *off)
+	{
+		u32 result = ioread32(r5);
+		u32 carry = ioread32(r1);
+		carry = carry & (0x00000001);
+		sprintf(str, "%d,%d\n", carry, result);
+		str_len = strlen(str);
+		if (copy_to_user(buf, str, str_len))
+		{
+			return -EFAULT;
+		}
+		*off += str_len;
+		return str_len;
+	}
 	return 0;
 }
 
 static ssize_t myalu_write(struct file *filp, const char __user *buf, size_t len, loff_t *off)
 {
 	pr_info("Driver Write Function Called...!!!\n");
-	// u32 operation;
-	// u32 operand1;
-	// u32 operand2;
-	// sscanf(buf, "%d,%d,%d", &operation, &operand1, &operand2);
+	u32 operation;
+	u32 operand1;
+	u32 operand2;
+	sscanf(buf, "%d,%d,%d", &operation, &operand1, &operand2);
+	pr_info("operation = %x operand1 = %x operand2 = %x \n", operation, operand1, operand2);
 	iowrite32(0x00000002, r2);
 	iowrite32(0x00000002, r3);
 	iowrite32(0x00000002, r4);
