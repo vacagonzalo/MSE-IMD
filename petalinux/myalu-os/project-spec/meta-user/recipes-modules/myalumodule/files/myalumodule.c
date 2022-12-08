@@ -17,14 +17,18 @@
 #define MYALU_S00_AXI_SLV_REG3_OFFSET 12U
 #define MYALU_S00_AXI_SLV_REG4_OFFSET 16U
 #define MYALU_S00_AXI_SLV_REG5_OFFSET 20U
-#define MYALU_S00_AXI_SIZE 24U
-#define MYALU_S00_AXI_LAST_ADDR (MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SIZE)
+#define MYALU_S00_AXI_SLV_REG_SIZE 32U
 
 dev_t dev = 0;
 static struct class *dev_class;
 static struct cdev myalu_cdev;
 
-static void __iomem *registers;
+static void __iomem *r0;
+static void __iomem *r1;
+static void __iomem *r2;
+static void __iomem *r3;
+static void __iomem *r4;
+static void __iomem *r5;
 
 static int __init myalu_driver_init(void);
 static void __exit myalu_driver_exit(void);
@@ -46,7 +50,7 @@ static struct file_operations fops = {
 
 static int myalu_open(struct inode *inode, struct file *file)
 {
-	u32 ready = ioread32(registers + MYALU_S00_AXI_SLV_REG1_OFFSET);
+	u32 ready = ioread32(r1);
 	ready = ready >> 1;
 	if (0x00000000 != ready)
 	{
@@ -61,7 +65,7 @@ static int myalu_open(struct inode *inode, struct file *file)
 
 static int myalu_release(struct inode *inode, struct file *file)
 {
-	u32 ready = ioread32(registers + MYALU_S00_AXI_SLV_REG1_OFFSET);
+	u32 ready = ioread32(r1);
 	ready = ready >> 1;
 	if (0x00000000 != ready)
 	{
@@ -76,8 +80,8 @@ static int myalu_release(struct inode *inode, struct file *file)
 
 static ssize_t myalu_read(struct file *filp, char __user *buf, size_t len, loff_t *off)
 {
-	u32 result = ioread32(registers + MYALU_S00_AXI_SLV_REG5_OFFSET);
-	u32 carry = ioread32(registers + MYALU_S00_AXI_SLV_REG1_OFFSET);
+	u32 result = ioread32(r5);
+	u32 carry = ioread32(r1);
 	carry = carry & (0x00000001);
 	pr_info("%d,%d\n", carry, result);
 	return 0;
@@ -86,7 +90,13 @@ static ssize_t myalu_read(struct file *filp, char __user *buf, size_t len, loff_
 static ssize_t myalu_write(struct file *filp, const char __user *buf, size_t len, loff_t *off)
 {
 	pr_info("Driver Write Function Called...!!!\n");
-	// TODO: parcear para enviar operación, operando1 y operando2
+	// u32 operation;
+	// u32 operand1;
+	// u32 operand2;
+	// sscanf(buf, "%d,%d,%d", &operation, &operand1, &operand2);
+	iowrite32(0x00000002, r2);
+	iowrite32(0x00000002, r3);
+	iowrite32(0x00000002, r4);
 	return len;
 }
 
@@ -125,8 +135,13 @@ static int __init myalu_driver_init(void)
 		goto r_device;
 	}
 	pr_info("starting myalu IPCORE.\n");
-	registers = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR, MYALU_S00_AXI_SIZE);
-	iowrite32(0x00000001, registers + MYALU_S00_AXI_SLV_REG0_OFFSET);
+	r0 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG0_OFFSET, 1);
+	r1 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG1_OFFSET, 1);
+	r2 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG2_OFFSET, 1);
+	r3 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG3_OFFSET, 1);
+	r4 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG4_OFFSET, 1);
+	r5 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG5_OFFSET, 1);
+	iowrite32(0x00000001, r0);
 	return 0;
 
 r_device:
@@ -143,8 +158,13 @@ static void __exit myalu_driver_exit(void)
 	cdev_del(&myalu_cdev);
 	unregister_chrdev_region(dev, 1);
 	pr_info("stoping myalu IPCORE\n");
-	iowrite32(0x00000002, registers + MYALU_S00_AXI_SLV_REG0_OFFSET);
-	iounmap(registers);
+	iowrite32(0x00000002, r0);
+	iounmap(r0);
+	iounmap(r1);
+	iounmap(r2);
+	iounmap(r3);
+	iounmap(r4);
+	iounmap(r5);
 }
 
 module_init(myalu_driver_init);
