@@ -65,16 +65,6 @@ static int myalu_open(struct inode *inode, struct file *file)
 
 static int myalu_release(struct inode *inode, struct file *file)
 {
-	u32 ready = ioread32(r1);
-	ready = ready >> 1;
-	if (0x00000000 != ready)
-	{
-		pr_info("myalu IPCORE ready for work.\n");
-	}
-	else
-	{
-		pr_info("myalu IPCORE is bussy.\n");
-	}
 	return 0;
 }
 
