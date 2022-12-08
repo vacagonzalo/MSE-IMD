@@ -9,16 +9,22 @@
 #include <linux/module.h>
 #include <linux/moduleparam.h>
 
+#define MYALU_S00_AXI_SLV_BASE_ADDR 0x43C00000
+
+#define MYALU_S00_AXI_SLV_REG0_OFFSET 0U
+#define MYALU_S00_AXI_SLV_REG1_OFFSET 4U
+#define MYALU_S00_AXI_SLV_REG2_OFFSET 8U
+#define MYALU_S00_AXI_SLV_REG3_OFFSET 12U
+#define MYALU_S00_AXI_SLV_REG4_OFFSET 16U
+#define MYALU_S00_AXI_SLV_REG5_OFFSET 20U
+#define MYALU_S00_AXI_SIZE 24U
+#define MYALU_S00_AXI_LAST_ADDR (MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SIZE)
+
 dev_t dev = 0;
 static struct class *dev_class;
 static struct cdev myalu_cdev;
 
-void __iomem *r0 = (void *)0x43C00000;
-void __iomem *r1 = (void *)0x43C00004;
-void __iomem *r2 = (void *)0x43C00008;
-void __iomem *r3 = (void *)0x43C0000C;
-void __iomem *r4 = (void *)0x43C00010;
-void __iomem *r5 = (void *)0x43C00014;
+static void __iomem *registers;
 
 static int __init myalu_driver_init(void);
 static void __exit myalu_driver_exit(void);
@@ -27,18 +33,20 @@ static int myalu_release(struct inode *inode, struct file *file);
 static ssize_t myalu_read(struct file *filp, char __user *buf, size_t len, loff_t *off);
 static ssize_t myalu_write(struct file *filp, const char *buf, size_t len, loff_t *off);
 
-static struct file_operations fops =
-	{
-		.owner = THIS_MODULE,
-		.read = myalu_read,
-		.write = myalu_write,
-		.open = myalu_open,
-		.release = myalu_release,
+// static void axi_little_write(u32 addr, u32 data);
+// static u32 axi_little_read(u32 addr);
+
+static struct file_operations fops = {
+	.owner = THIS_MODULE,
+	.read = myalu_read,
+	.write = myalu_write,
+	.open = myalu_open,
+	.release = myalu_release,
 };
 
 static int myalu_open(struct inode *inode, struct file *file)
 {
-	u32 ready = ioread32(r1);
+	u32 ready = ioread32(registers + MYALU_S00_AXI_SLV_REG1_OFFSET);
 	ready = ready >> 1;
 	if (0x00000000 != ready)
 	{
@@ -53,7 +61,7 @@ static int myalu_open(struct inode *inode, struct file *file)
 
 static int myalu_release(struct inode *inode, struct file *file)
 {
-	u32 ready = ioread32(r1);
+	u32 ready = ioread32(registers + MYALU_S00_AXI_SLV_REG1_OFFSET);
 	ready = ready >> 1;
 	if (0x00000000 != ready)
 	{
@@ -68,10 +76,8 @@ static int myalu_release(struct inode *inode, struct file *file)
 
 static ssize_t myalu_read(struct file *filp, char __user *buf, size_t len, loff_t *off)
 {
-	wmb();
-	u32 result = ioread32(r5);
-	wmb();
-	u32 carry = ioread32(r1);
+	u32 result = ioread32(registers + MYALU_S00_AXI_SLV_REG5_OFFSET);
+	u32 carry = ioread32(registers + MYALU_S00_AXI_SLV_REG1_OFFSET);
 	carry = carry & (0x00000001);
 	pr_info("%d,%d\n", carry, result);
 	return 0;
@@ -86,6 +92,7 @@ static ssize_t myalu_write(struct file *filp, const char __user *buf, size_t len
 
 static int __init myalu_driver_init(void)
 {
+	// void *ioremap(unsigned long phys_addr, unsigned long size);
 	/*Allocating Major number*/
 	if ((alloc_chrdev_region(&dev, 0, 1, "myalu")) < 0)
 	{
@@ -118,7 +125,8 @@ static int __init myalu_driver_init(void)
 		goto r_device;
 	}
 	pr_info("starting myalu IPCORE.\n");
-	iowrite32(0x00000001, r0);
+	registers = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR, MYALU_S00_AXI_SIZE);
+	iowrite32(0x00000001, registers + MYALU_S00_AXI_SLV_REG0_OFFSET);
 	return 0;
 
 r_device:
@@ -135,7 +143,8 @@ static void __exit myalu_driver_exit(void)
 	cdev_del(&myalu_cdev);
 	unregister_chrdev_region(dev, 1);
 	pr_info("stoping myalu IPCORE\n");
-	iowrite32(0x00000002, r0);
+	iowrite32(0x00000002, registers + MYALU_S00_AXI_SLV_REG0_OFFSET);
+	iounmap(registers);
 }
 
 module_init(myalu_driver_init);
