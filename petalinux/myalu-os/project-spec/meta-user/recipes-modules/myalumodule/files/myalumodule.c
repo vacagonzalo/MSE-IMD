@@ -4,10 +4,13 @@
 #include <linux/fs.h>
 #include <linux/init.h>
 #include <linux/io.h>
+#include <linux/ioctl.h>
 #include <linux/kdev_t.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/moduleparam.h>
+
+#include "myalumodule.h"
 
 #define MYALU_S00_AXI_SLV_BASE_ADDR 0x43C00000
 
@@ -17,7 +20,7 @@
 #define MYALU_S00_AXI_SLV_REG3_OFFSET 12U
 #define MYALU_S00_AXI_SLV_REG4_OFFSET 16U
 #define MYALU_S00_AXI_SLV_REG5_OFFSET 20U
-#define MYALU_S00_AXI_SLV_REG_SIZE 32U
+#define MYALU_S00_AXI_SLV_REG_SIZE 1U
 
 dev_t dev = 0;
 static struct class *dev_class;
@@ -32,10 +35,14 @@ static void __iomem *r5;
 
 static int __init myalu_driver_init(void);
 static void __exit myalu_driver_exit(void);
+
 static int myalu_open(struct inode *inode, struct file *file);
 static int myalu_release(struct inode *inode, struct file *file);
+
 static ssize_t myalu_read(struct file *filp, char __user *buf, size_t len, loff_t *off);
 static ssize_t myalu_write(struct file *filp, const char *buf, size_t len, loff_t *off);
+
+static long int myalu_ioctl(struct file *file, unsigned cmd, unsigned long arg);
 
 // static void axi_little_write(u32 addr, u32 data);
 // static u32 axi_little_read(u32 addr);
@@ -46,19 +53,16 @@ static struct file_operations fops = {
 	.write = myalu_write,
 	.open = myalu_open,
 	.release = myalu_release,
+	.unlocked_ioctl = myalu_ioctl,
 };
 
 static int myalu_open(struct inode *inode, struct file *file)
 {
 	u32 ready = ioread32(r1);
 	ready = ready >> 1;
-	if (0x00000000 != ready)
+	if (0x00000000 == ready)
 	{
-		pr_info("myalu IPCORE ready for work.\n");
-	}
-	else
-	{
-		pr_info("myalu IPCORE is bussy.\n");
+		pr_info("myalu IPCORE is bussy, are you in QEMU?.\n");
 	}
 	return 0;
 }
@@ -89,17 +93,21 @@ static ssize_t myalu_read(struct file *filp, char __user *buf, size_t len, loff_
 	return 0;
 }
 
+static u32 write_operation;
+static u32 write_operand1;
+static u32 write_operand2;
+
 static ssize_t myalu_write(struct file *filp, const char __user *buf, size_t len, loff_t *off)
 {
-	pr_info("Driver Write Function Called...!!!\n");
-	u32 operation;
-	u32 operand1;
-	u32 operand2;
-	sscanf(buf, "%d,%d,%d", &operation, &operand1, &operand2);
-	pr_info("operation = %x operand1 = %x operand2 = %x \n", operation, operand1, operand2);
-	iowrite32(0x00000002, r2);
-	iowrite32(0x00000002, r3);
-	iowrite32(0x00000002, r4);
+	char str[32];
+	if (copy_from_user(str, buf, len))
+	{
+		return -EFAULT;
+	}
+	sscanf(str, "%d,%d,%d", &write_operation, &write_operand1, &write_operand2);
+	iowrite32(write_operation, r2);
+	iowrite32(write_operand1, r3);
+	iowrite32(write_operand2, r4);
 	return len;
 }
 
@@ -138,12 +146,12 @@ static int __init myalu_driver_init(void)
 		goto r_device;
 	}
 	pr_info("starting myalu IPCORE.\n");
-	r0 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG0_OFFSET, 1);
-	r1 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG1_OFFSET, 1);
-	r2 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG2_OFFSET, 1);
-	r3 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG3_OFFSET, 1);
-	r4 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG4_OFFSET, 1);
-	r5 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG5_OFFSET, 1);
+	r0 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG0_OFFSET, MYALU_S00_AXI_SLV_REG_SIZE);
+	r1 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG1_OFFSET, MYALU_S00_AXI_SLV_REG_SIZE);
+	r2 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG2_OFFSET, MYALU_S00_AXI_SLV_REG_SIZE);
+	r3 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG3_OFFSET, MYALU_S00_AXI_SLV_REG_SIZE);
+	r4 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG4_OFFSET, MYALU_S00_AXI_SLV_REG_SIZE);
+	r5 = ioremap(MYALU_S00_AXI_SLV_BASE_ADDR + MYALU_S00_AXI_SLV_REG5_OFFSET, MYALU_S00_AXI_SLV_REG_SIZE);
 	iowrite32(0x00000001, r0);
 	return 0;
 
@@ -170,6 +178,46 @@ static void __exit myalu_driver_exit(void)
 	iounmap(r5);
 }
 
+/* IOCTL *********************************************************************/
+
+static struct compute_t compute = {
+	.operation = OPERATION_INVALID,
+	.operand1 = 0,
+	.operand2 = 0};
+
+static struct result_t result = {
+	.value = 0,
+	.carry = 0};
+
+static long int myalu_ioctl(struct file *file, unsigned cmd, unsigned long arg)
+{
+	switch (cmd)
+	{
+	case WR_VALUE:
+		if (copy_from_user(&compute, (struct compute_t *)arg, sizeof(struct compute_t)))
+		{
+			return -EFAULT;
+		}
+		iowrite32(compute.operation, r2);
+		iowrite32(compute.operand1, r3);
+		iowrite32(compute.operand2, r4);
+		break;
+
+	case RD_VALUE:
+		result.value = ioread32(r5);
+		result.carry = ioread32(r1) & (0x00000001);
+		if (copy_to_user((struct result_t *)arg, &result, sizeof(struct result_t)))
+		{
+			return -EFAULT;
+		}
+		break;
+
+	default:
+		break;
+	}
+	return 0;
+}
+/*****************************************************************************/
 module_init(myalu_driver_init);
 module_exit(myalu_driver_exit);
 
