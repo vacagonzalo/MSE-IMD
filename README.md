@@ -24,6 +24,137 @@ Este trabajo implementa un flujo de trabajo que incluye:
 * Además, se necesita de Vivado, Vitis y Petalinux en su versión 2022.2.
 * Finalmente, se necesita *GHDL* y *GTKWAVE*.
 
+## Arbol del repositorio
+
+```
+.
+├── hardware
+├── img
+├── ipcore
+│   ├── rtl
+│   │   ├── src
+│   │   └── verification
+│   │       └── tb_alu
+│   ├── vitis
+│   │   ├── myalu_artyz7_20
+│   │   │   ├── export
+│   │   │   │   └── myalu_artyz7_20
+│   │   │   │       ├── hw
+│   │   │   │       │   └── drivers
+│   │   │   │       │       └── myalu_v1_0
+│   │   │   │       │           ├── data
+│   │   │   │       │           └── src
+│   │   │   │       └── sw
+│   │   │   │           └── myalu_artyz7_20
+│   │   │   │               ├── boot
+│   │   │   │               └── qemu
+│   │   │   ├── hw
+│   │   │   │   └── drivers
+│   │   │   │       └── myalu_v1_0
+│   │   │   │           ├── data
+│   │   │   │           └── src
+│   │   │   ├── logs
+│   │   │   ├── ps7_cortexa9_0
+│   │   │   ├── resources
+│   │   │   │   └── myalu_artyz7_20
+│   │   │   └── zynq_fsbl
+│   │   ├── myalu_test
+│   │   │   ├── Debug
+│   │   │   │   └── src
+│   │   │   ├── _ide
+│   │   │   │   ├── bitstream
+│   │   │   │   ├── launch
+│   │   │   │   └── psinit
+│   │   │   └── src
+│   │   ├── myalu_test_system
+│   │   │   └── _ide
+│   │   │       └── scripts
+│   │   └── RemoteSystemsTempFiles
+│   └── vivado
+│       ├── block_diagram
+│       │   ├── block_diagram.gen
+│       │   ├── block_diagram.hw
+│       │   ├── block_diagram.ip_user_files
+│       │   │   ├── mem_init_files
+│       │   │   └── sim_scripts
+│       │   │       └── blocks
+│       │   │           ├── activehdl
+│       │   │           ├── modelsim
+│       │   │           ├── questa
+│       │   │           ├── riviera
+│       │   │           ├── vcs
+│       │   │           ├── xcelium
+│       │   │           └── xsim
+│       │   │               └── protoinst_files
+│       │   ├── block_diagram.runs
+│       │   │   ├── blocks_auto_pc_0_synth_1
+│       │   │   ├── blocks_myalu_0_0_synth_1
+│       │   │   ├── blocks_processing_system7_0_0_synth_1
+│       │   │   ├── blocks_rst_ps7_0_50M_0_synth_1
+│       │   │   ├── impl_1
+│       │   │   └── synth_1
+│       │   ├── block_diagram.sim
+│       │   └── block_diagram.srcs
+│       └── repository
+│           ├── ip_repo
+│           │   └── myalu_1_0
+│           │       ├── drivers
+│           │       │   └── myalu_v1_0
+│           │       │       ├── data
+│           │       │       └── src
+│           │       ├── example_designs
+│           │       │   ├── bfm_design
+│           │       │   └── debug_hw_design
+│           │       ├── hdl
+│           │       ├── src
+│           │       └── xgui
+│           ├── ip_user_files
+│           └── managed_ip_project
+│               ├── managed_ip_project.cache
+│               │   ├── ip
+│               │   │   └── 2022.2
+│               │   └── wt
+│               ├── managed_ip_project.hw
+│               └── managed_ip_project.sim
+└── petalinux
+    └── myalu-os
+        ├── images
+        │   └── linux
+        │       └── pxelinux.cfg
+        └── project-spec
+            ├── configs
+            │   ├── busybox
+            │   ├── init-ifupdown
+            │   └── systemd-conf
+            ├── hw-description
+            │   └── drivers
+            │       └── myalu_v1_0
+            │           ├── data
+            │           └── src
+            └── meta-user
+                ├── conf
+                ├── meta-xilinx-tools
+                │   └── recipes-bsp
+                │       └── uboot-device-tree
+                │           └── files
+                ├── recipes-apps
+                │   └── myapp
+                │       └── files
+                ├── recipes-bsp
+                │   ├── device-tree
+                │   │   └── files
+                │   └── u-boot
+                │       └── files
+                ├── recipes-kernel
+                │   └── linux
+                │       └── linux-xlnx
+                └── recipes-modules
+                    ├── myalumodule
+                    │   └── files
+                    └── mymodule
+                        └── files
+```
+
 ## Pasos a seguir
 
 ### Obtener la descripción del hardware
